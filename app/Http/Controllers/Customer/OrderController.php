@@ -20,58 +20,89 @@ class OrderController extends Controller
         return view('customer.checkout', compact('cart', 'subtotal'));
     }
 
-    /**
-     * Place the order.
-     * delivery_type: takeaway | delivery | reservation
-     *
-     * For delivery:
-     *   - address, lat_from, lng_from, lat_to, lng_to, distance_km required
-     *   - delivery_fee calculated server-side from distance_km
-     *
-     * For reservation:
-     *   - reservation_at (datetime), guests required
-     */
     public function place(Request $request)
     {
+        // ── Validation ────────────────────────────────────────────────
         $request->validate([
-            'delivery_type'  => 'required|in:takeaway,delivery,reservation',
-            'address'        => 'required_if:delivery_type,delivery|nullable|string',
-            'lat_from'       => 'required_if:delivery_type,delivery|nullable|numeric',
-            'lng_from'       => 'required_if:delivery_type,delivery|nullable|numeric',
-            'lat_to'         => 'required_if:delivery_type,delivery|nullable|numeric',
-            'lng_to'         => 'required_if:delivery_type,delivery|nullable|numeric',
-            'distance_km'    => 'required_if:delivery_type,delivery|nullable|numeric|min:0',
-            'reservation_at' => 'required_if:delivery_type,reservation|nullable|date|after:now',
-            'guests'         => 'required_if:delivery_type,reservation|nullable|integer|min:1|max:50',
-            'notes'          => 'nullable|string|max:500',
+
+            // reservation_at is NOW required for ALL order types
+            // because you moved it outside the type selector
+            'reservation_at' => [
+                'required',
+                'date',
+                'after:' . now()->addMinutes(30)->toDateTimeString(), // at least 30 min from now
+            ],
+
+            // guests also required for all order types
+            'guests' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:50',
+            ],
+
+            // delivery_type only has 2 options now (reservation radio is commented out)
+            'delivery_type' => 'required|in:takeaway,delivery',
+
+            // address only required when delivery is chosen
+            'address' => 'required_if:delivery_type,delivery|nullable|string|max:500',
+
+            // GPS fields only required when delivery is chosen
+            'lat_from'    => 'nullable|numeric',
+            'lng_from'    => 'nullable|numeric',
+            'lat_to'      => 'required_if:delivery_type,delivery|nullable|numeric',
+            'lng_to'      => 'required_if:delivery_type,delivery|nullable|numeric',
+            'distance_km' => 'required_if:delivery_type,delivery|nullable|numeric|min:0',
+
+            'notes' => 'nullable|string|max:500',
+        ],
+        // ── Custom error messages ─────────────────────────────────────
+        [
+            'reservation_at.required' => 'Please select a booking date and time.',
+            'reservation_at.after'    => 'Booking time must be at least 30 minutes from now.',
+            'guests.required'         => 'Please enter the number of guests.',
+            'guests.min'              => 'At least 1 guest is required.',
+            'delivery_type.required'  => 'Please choose an order type (Take Away or Delivery).',
+            'delivery_type.in'        => 'Invalid order type selected.',
+            'address.required_if'     => 'Please enter a delivery address.',
+            'lat_to.required_if'      => 'Please pin your delivery destination on the map.',
+            'lng_to.required_if'      => 'Please pin your delivery destination on the map.',
+            'distance_km.required_if' => 'Distance could not be calculated. Please re-pin your location.',
         ]);
 
+        // ── Cart check ────────────────────────────────────────────────
         $cart = session('cart', []);
         if (empty($cart)) {
-            return redirect()->route('customer.dashboard')->with('error', 'Cart is empty.');
+            return redirect()->route('customer.dashboard')->with('error', 'Your cart is empty.');
         }
 
-        // Calculate delivery fee server-side (never trust client)
+        // ── Delivery fee (server-side, never trust JS) ─────────────
         $deliveryFee = 0;
         if ($request->delivery_type === 'delivery') {
             $deliveryFee = Order::calcDeliveryFee((float) $request->distance_km);
         }
 
+        // ── Database transaction ──────────────────────────────────────
         DB::beginTransaction();
         try {
             $subtotal = 0;
 
+            // Re-check stock for every cart item
             foreach ($cart as $pid => $item) {
                 $product = Product::lockForUpdate()->find($pid);
                 if (!$product || $product->stock < $item['quantity']) {
                     DB::rollBack();
-                    return back()->with('error', 'Sorry, "' . $item['name'] . '" is out of stock.');
+                    return back()->with('error', 'Sorry, "' . $item['name'] . '" is out of stock or has insufficient quantity.');
                 }
                 $subtotal += $item['subtotal'];
             }
 
+            // Generate unique order code
             $orderCode = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
 
+            // Create the order
+            // NOTE: delivery_type is 'takeaway' or 'delivery'
+            // reservation_at and guests are now always filled regardless of type
             $order = Order::create([
                 'user_id'        => auth()->id(),
                 'order_code'     => $orderCode,
@@ -80,16 +111,19 @@ class OrderController extends Controller
                 'status'         => 'wait',
                 'total'          => $subtotal,
                 'delivery_fee'   => $deliveryFee,
-                'lat_from'       => $request->lat_from,
-                'lng_from'       => $request->lng_from,
-                'lat_to'         => $request->lat_to,
-                'lng_to'         => $request->lng_to,
-                'distance_km'    => $request->distance_km,
-                'reservation_at' => $request->delivery_type === 'reservation' ? $request->reservation_at : null,
-                'guests'         => $request->delivery_type === 'reservation' ? $request->guests : null,
-                'notes'          => $request->notes,
+
+                // GPS — only filled for delivery
+                'lat_from'    => $request->delivery_type === 'delivery' ? $request->lat_from    : null,
+                'lng_from'    => $request->delivery_type === 'delivery' ? $request->lng_from    : null,
+                'lat_to'      => $request->delivery_type === 'delivery' ? $request->lat_to      : null,
+                'lng_to'      => $request->delivery_type === 'delivery' ? $request->lng_to      : null,
+                'distance_km' => $request->delivery_type === 'delivery' ? $request->distance_km : null,
+                'reservation_at' => $request->reservation_at,
+                'guests'         => $request->guests,
+                'notes' => $request->notes,
             ]);
 
+            // Create order items + deduct stock
             foreach ($cart as $pid => $item) {
                 OrderItem::create([
                     'order_id'   => $order->id,
@@ -105,11 +139,11 @@ class OrderController extends Controller
             session()->forget('cart');
 
             return redirect()->route('customer.orders.show', $order->id)
-                ->with('success', 'Order placed! Code: ' . $orderCode);
+                ->with('success', 'Order placed! Your booking code is: ' . $orderCode);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Failed to place order. Please try again.');
+            return back()->with('error', 'Something went wrong. Please try again.');
         }
     }
 

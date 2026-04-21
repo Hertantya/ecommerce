@@ -47,9 +47,31 @@
 {{-- ════════════════ LEFT — options ════════════════ --}}
 <div class="col-lg-7">
 <div class="card border-0 shadow-sm"><div class="card-body p-4">
-
+            <div class="row g-3 mb-3">
+            <div class="col-md-7">
+                <label class="form-label fw-semibold">
+                    Date &amp; Time <span class="text-danger">*</span>
+                </label>
+                <input type="datetime-local" name="reservation_at" id="reservationAt"
+                       class="form-control"
+                       min="{{ now()->addHour()->format('Y-m-d\TH:i') }}"
+                       value="{{ old('reservation_at') }}">
+                <div class="form-text">Minimum 1 hour from now.</div>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fw-semibold">
+                    Number of Guests <span class="text-danger">*</span>
+                </label>
+                <input type="number" name="guests" id="guestsInput"
+                       class="form-control" min="1" max="50"
+                       value="{{ old('guests', 2) }}">
+            </div>
+        </div>
+        <div class="alert alert-warning py-2 small">
+            <i class="bi bi-clock me-1"></i>
+            Please arrive 10 minutes before your scheduled time.
+        </div>
     {{-- Step 1: order type --}}
-    <div class="section-label">Step 1 — Choose Order Type</div>
     <div class="row g-2 mb-4" id="typeSelector">
         <div class="col-4">
             <label style="display:block">
@@ -75,23 +97,10 @@
                 </div>
             </label>
         </div>
-        <div class="col-4">
-            <label style="display:block">
-                <input type="radio" name="delivery_type" value="reservation"
-                       class="d-none type-radio"
-                       {{ old('delivery_type')==='reservation'?'checked':'' }}>
-                <div class="type-card {{ old('delivery_type')==='reservation'?'selected':'' }}">
-                    <div class="type-icon">📅</div>
-                    <div class="type-label">Reservation</div>
-                    <div class="type-sub">Book a table</div>
-                </div>
-            </label>
-        </div>
     </div>
 
     {{-- ── Delivery section ────────────────────────────── --}}
     <div id="deliverySection" style="display:none">
-        <div class="section-label">Step 2 — Set Delivery Location</div>
 
         {{-- GPS status bar --}}
         <div id="gpsStatus" class="alert alert-info py-2 small mb-3">
@@ -132,36 +141,6 @@
         <input type="hidden" name="lng_to"      id="lngTo">
         <input type="hidden" name="distance_km" id="distanceKm">
     </div>
-
-    {{-- ── Reservation section ─────────────────────────── --}}
-    <div id="reservationSection" style="display:none">
-        <div class="section-label">Step 2 — Reservation Details</div>
-        <div class="row g-3 mb-3">
-            <div class="col-md-7">
-                <label class="form-label fw-semibold">
-                    Date &amp; Time <span class="text-danger">*</span>
-                </label>
-                <input type="datetime-local" name="reservation_at" id="reservationAt"
-                       class="form-control"
-                       min="{{ now()->addHour()->format('Y-m-d\TH:i') }}"
-                       value="{{ old('reservation_at') }}">
-                <div class="form-text">Minimum 1 hour from now.</div>
-            </div>
-            <div class="col-md-5">
-                <label class="form-label fw-semibold">
-                    Number of Guests <span class="text-danger">*</span>
-                </label>
-                <input type="number" name="guests" id="guestsInput"
-                       class="form-control" min="1" max="50"
-                       value="{{ old('guests', 2) }}">
-            </div>
-        </div>
-        <div class="alert alert-warning py-2 small">
-            <i class="bi bi-clock me-1"></i>
-            Please arrive 10 minutes before your scheduled time.
-        </div>
-    </div>
-
     {{-- Notes --}}
     <div class="section-label mt-3">Additional Notes</div>
     <textarea name="notes" class="form-control mb-4" rows="2"
@@ -409,15 +388,10 @@ function switchType(val) {
     radios.forEach((r, i) => typeCards[i].classList.toggle('selected', r.value === val));
 
     delivSec.style.display = val === 'delivery'    ? '' : 'none';
-    resvSec.style.display  = val === 'reservation' ? '' : 'none';
-
     if (val !== 'delivery') {
         updateSummary(0);
         document.getElementById('routeInfo').style.display = 'none';
     }
-
-    document.getElementById('reservationAt').required = (val === 'reservation');
-    document.getElementById('guestsInput').required   = (val === 'reservation');
 
     // Init map lazily only when delivery is chosen
     if (val === 'delivery') {
