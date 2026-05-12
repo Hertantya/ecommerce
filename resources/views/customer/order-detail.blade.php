@@ -70,10 +70,6 @@
                     <div class="text-muted small">Reservation Date</div>
                     <div class="fw-semibold">{{ $order->reservation_at?->format('d M Y H:i') }}</div>
                 </div>
-                <div class="col-6">
-                    <div class="text-muted small">Guests</div>
-                    <div class="fw-semibold">{{ $order->guests }} people</div>
-                </div>
                 @endif
                 @if($order->delivery_type === 'delivery')
                 <div class="col-12">

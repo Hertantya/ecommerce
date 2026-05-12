@@ -96,12 +96,6 @@
                         <div class="fw-bold fs-5">{{ $order->reservation_at?->format('d M Y') }}</div>
                         <div class="fw-semibold text-primary">{{ $order->reservation_at?->format('H:i') }}</div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="text-muted small">Number of Guests</div>
-                        <div class="fw-bold fs-4">{{ $order->guests }}
-                            <span class="fs-6 fw-normal text-muted">people</span>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -139,7 +133,6 @@
                     @endif
                     @if($order->delivery_type === 'reservation')
                     <tr><td class="text-muted">Reserved</td><td>{{ $order->reservation_at?->format('d M Y H:i') }}</td></tr>
-                    <tr><td class="text-muted">Guests</td>  <td>{{ $order->guests }}</td></tr>
                     @endif
                     <tr><td class="text-muted">Placed</td>  <td>{{ $order->created_at->format('d M Y H:i') }}</td></tr>
                 </table>

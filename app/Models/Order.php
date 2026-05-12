@@ -8,7 +8,7 @@ class Order extends Model
         'user_id', 'order_code', 'delivery_type',
         'address', 'status', 'total', 'delivery_fee',
         'lat_from', 'lng_from', 'lat_to', 'lng_to',
-        'distance_km', 'reservation_at', 'guests', 'notes',
+        'distance_km', 'reservation_at', 'notes',
     ];
 
     protected $casts = [

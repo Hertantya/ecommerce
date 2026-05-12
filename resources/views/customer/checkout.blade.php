@@ -58,16 +58,8 @@
                        value="{{ old('reservation_at') }}">
                 <div class="form-text">Minimum 1 hour from now.</div>
             </div>
-            <div class="col-md-5">
-                <label class="form-label fw-semibold">
-                    Number of Guests <span class="text-danger">*</span>
-                </label>
-                <input type="number" name="guests" id="guestsInput"
-                       class="form-control" min="1" max="50"
-                       value="{{ old('guests', 2) }}">
-            </div>
         </div>
-        <div class="alert alert-warning py-2 small">
+        <div id="arrivalAlert" class="alert alert-warning py-2 small">
             <i class="bi bi-clock me-1"></i>
             Please arrive 10 minutes before your scheduled time.
         </div>
@@ -386,11 +378,20 @@ const resvSec   = document.getElementById('reservationSection');
 
 function switchType(val) {
     radios.forEach((r, i) => typeCards[i].classList.toggle('selected', r.value === val));
-
+        // Swap alert message based on type
+    const alert = document.getElementById('arrivalAlert');
+    if (val === 'takeaway') {
+        alert.className = 'alert alert-warning py-2 small';
+        alert.innerHTML = '<i class="bi bi-clock me-1"></i> Please arrive 10 minutes before your scheduled time.';
+    } else {
+        alert.className = 'alert alert-info py-2 small';
+        alert.innerHTML = '<i class="bi bi-truck me-1"></i> Make sure your delivery date , time and address is correct before placing the order.';
+    }
     delivSec.style.display = val === 'delivery'    ? '' : 'none';
     if (val !== 'delivery') {
         updateSummary(0);
         document.getElementById('routeInfo').style.display = 'none';
+
     }
 
     // Init map lazily only when delivery is chosen

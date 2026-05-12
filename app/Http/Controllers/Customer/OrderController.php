@@ -32,15 +32,6 @@ class OrderController extends Controller
                 'date',
                 'after:' . now()->addMinutes(30)->toDateTimeString(), // at least 30 min from now
             ],
-
-            // guests also required for all order types
-            'guests' => [
-                'required',
-                'integer',
-                'min:1',
-                'max:50',
-            ],
-
             // delivery_type only has 2 options now (reservation radio is commented out)
             'delivery_type' => 'required|in:takeaway,delivery',
 
@@ -60,8 +51,6 @@ class OrderController extends Controller
         [
             'reservation_at.required' => 'Please select a booking date and time.',
             'reservation_at.after'    => 'Booking time must be at least 30 minutes from now.',
-            'guests.required'         => 'Please enter the number of guests.',
-            'guests.min'              => 'At least 1 guest is required.',
             'delivery_type.required'  => 'Please choose an order type (Take Away or Delivery).',
             'delivery_type.in'        => 'Invalid order type selected.',
             'address.required_if'     => 'Please enter a delivery address.',
@@ -102,7 +91,7 @@ class OrderController extends Controller
 
             // Create the order
             // NOTE: delivery_type is 'takeaway' or 'delivery'
-            // reservation_at and guests are now always filled regardless of type
+            // reservation_at are now always filled regardless of type
             $order = Order::create([
                 'user_id'        => auth()->id(),
                 'order_code'     => $orderCode,
@@ -119,7 +108,6 @@ class OrderController extends Controller
                 'lng_to'      => $request->delivery_type === 'delivery' ? $request->lng_to      : null,
                 'distance_km' => $request->delivery_type === 'delivery' ? $request->distance_km : null,
                 'reservation_at' => $request->reservation_at,
-                'guests'         => $request->guests,
                 'notes' => $request->notes,
             ]);
 

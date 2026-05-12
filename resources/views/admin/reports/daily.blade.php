@@ -149,7 +149,7 @@
     <div class="card-body p-0">
         <table class="table mb-0">
             <thead class="table-light">
-                <tr><th>Code</th><th>Customer</th><th>Date & Time</th><th>Guests</th><th>Status</th><th></th></tr>
+                <tr><th>Code</th><th>Customer</th><th>Date & Time</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
             @foreach($upcomingReservations as $r)
@@ -160,7 +160,6 @@
                         <strong>{{ $r->reservation_at->format('d M Y') }}</strong>
                         <span class="text-primary ms-1">{{ $r->reservation_at->format('H:i') }}</span>
                     </td>
-                    <td>{{ $r->guests }} people</td>
                     <td><span class="badge bg-{{ $r->statusColor() }}">{{ $r->statusLabel() }}</span></td>
                     <td>
                         <a href="{{ route('admin.orders.show', $r->id) }}" class="btn btn-sm btn-outline-primary">
