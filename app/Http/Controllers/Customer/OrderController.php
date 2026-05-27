@@ -35,6 +35,9 @@ class OrderController extends Controller
             // delivery_type only has 2 options now (reservation radio is commented out)
             'delivery_type' => 'required|in:takeaway,delivery',
 
+            // payment method
+            'payment_method' => 'required|in:cash,qris_driver',
+
             // address only required when delivery is chosen
             'address' => 'required_if:delivery_type,delivery|nullable|string|max:500',
 
@@ -98,6 +101,7 @@ class OrderController extends Controller
                 'delivery_type'  => $request->delivery_type,
                 'address'        => $request->delivery_type === 'delivery' ? $request->address : null,
                 'status'         => 'wait',
+                'payment_method' => $request->payment_method,
                 'total'          => $subtotal,
                 'delivery_fee'   => $deliveryFee,
 

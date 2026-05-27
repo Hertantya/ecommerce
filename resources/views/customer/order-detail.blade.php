@@ -65,6 +65,18 @@
                     <div class="text-muted small">Placed At</div>
                     <div class="fw-semibold small">{{ $order->created_at->format('d M Y H:i') }}</div>
                 </div>
+                <div class="col-6">
+                    <div class="text-muted small">Payment Method</div>
+                    @if($order->payment_method === 'qris_driver')
+                        <span class="badge bg-primary fs-6">
+                            <i class="bi bi-qr-code me-1"></i>QRIS
+                        </span>
+                    @else
+                        <span class="badge bg-success fs-6">
+                            <i class="bi bi-cash-coin me-1"></i>Cash
+                        </span>
+                    @endif
+                </div>
                 @if($order->delivery_type === 'reservation')
                 <div class="col-6">
                     <div class="text-muted small">Reservation Date</div>

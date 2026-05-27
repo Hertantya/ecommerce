@@ -133,6 +133,45 @@
         <input type="hidden" name="lng_to"      id="lngTo">
         <input type="hidden" name="distance_km" id="distanceKm">
     </div>
+    <div class="section-label mt-3">Payment Method</div>
+
+<div class="row g-2 mb-4">
+
+    <div class="col-6">
+        <label class="w-100">
+            <input type="radio" name="payment_method"
+                   value="cash"
+                   class="d-none payment-radio"
+                   {{ old('payment_method', 'cash') === 'cash' ? 'checked' : '' }}>
+
+            <div class="type-card payment-card {{ old('payment_method', 'cash') === 'cash' ? 'selected' : '' }}">
+                <div class="type-icon">💵</div>
+                <div class="type-label">Cash</div>
+                <div class="type-sub">Pay directly</div>
+            </div>
+        </label>
+    </div>
+
+    <div class="col-6">
+        <label class="w-100">
+            <input type="radio" name="payment_method"
+                   value="qris_driver"
+                   class="d-none payment-radio"
+                   {{ old('payment_method') === 'qris_driver' ? 'checked' : '' }}>
+
+            <div class="type-card payment-card {{ old('payment_method') === 'qris_driver' ? 'selected' : '' }}">
+                <div class="type-icon">📱</div>
+                <div class="type-label">QRIS</div>
+                <div class="type-sub">Driver shows QRIS</div>
+            </div>
+        </label>
+    </div>
+
+</div>
+
+<div class="alert alert-info small" id="qrisInfo" style="display:none">
+    <i class="bi bi-info-circle me-1"></i>
+Resto / Driver menunjukkan barcode Qris</div>
     {{-- Notes --}}
     <div class="section-label mt-3">Additional Notes</div>
     <textarea name="notes" class="form-control mb-4" rows="2"
@@ -416,5 +455,24 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
         }
     }
 });
+const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
+const qrisInfo      = document.getElementById('qrisInfo');
+
+paymentRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Remove 'selected' from all payment cards
+        document.querySelectorAll('.payment-card').forEach(card => card.classList.remove('selected'));
+        // Add 'selected' to the card inside the same label as this radio
+        this.closest('label').querySelector('.payment-card').classList.add('selected');
+
+        qrisInfo.style.display = this.value === 'qris_driver' ? '' : 'none';
+    });
+});
+
+// Show qrisInfo on page load if QRIS was previously selected (e.g. after validation error)
+const checkedPayment = document.querySelector('input[name="payment_method"]:checked');
+if (checkedPayment && checkedPayment.value === 'qris_driver') {
+    qrisInfo.style.display = '';
+}
 </script>
 @endpush

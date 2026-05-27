@@ -128,6 +128,20 @@
                             <i class="bi {{ $order->typeIcon() }} me-1"></i>{{ $order->typeLabel() }}
                         </span></td>
                     </tr>
+                    <tr>
+                        <td class="text-muted">Payment</td>
+                        <td>
+                            @if($order->payment_method === 'qris_driver')
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-qr-code me-1"></i>QRIS
+                                </span>
+                            @else
+                                <span class="badge bg-success">
+                                    <i class="bi bi-cash-coin me-1"></i>Cash
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
                     @if($order->delivery_type === 'delivery' && $order->address)
                     <tr><td class="text-muted">Address</td><td class="small">{{ $order->address }}</td></tr>
                     @endif

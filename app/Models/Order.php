@@ -6,7 +6,7 @@ class Order extends Model
 {
     protected $fillable = [
         'user_id', 'order_code', 'delivery_type',
-        'address', 'status', 'total', 'delivery_fee',
+        'address', 'status', 'payment_method', 'total', 'delivery_fee',
         'lat_from', 'lng_from', 'lat_to', 'lng_to',
         'distance_km', 'reservation_at', 'notes',
     ];
